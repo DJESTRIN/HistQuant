@@ -43,7 +43,7 @@ def main(input_directory):
     tiled_dir=input_directory+"/MIP488_tiled/"
     if not os.path.exists(tiled_dir):
         os.mkdir(tiled_dir)
-    tile_MIP(max_image,5000,tiled_dir)
+    tile_MIP(max_image,10000,tiled_dir)
     
     #Max Inensity Projection tdtomato
     search_string=input_directory+"/*594*.tif"
@@ -60,7 +60,7 @@ def main(input_directory):
     tiled_dir=input_directory+"/MIP594_tiled/"
     if not os.path.exists(tiled_dir):
         os.mkdir(tiled_dir)
-    tile_MIP(max_image,5000,tiled_dir)
+    tile_MIP(max_image,10000,tiled_dir)
     
 
 if __name__=="__main__":
