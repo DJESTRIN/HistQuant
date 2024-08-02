@@ -1,0 +1,30 @@
+#subprocess_os_system.py
+import os
+import re, glob, os #navigation in diff repertory if script not in the same folder
+from os import walk #Find folders and files
+from os import listdir
+from os.path import isfile, join
+import subprocess
+
+
+#Test from forum @CellKai
+ilastik_location = 'C:\\Program Files\\ilastik-1.3.3post3\\'
+ilastik_project = 'C:\\Program Files\\ilastik-1.3.3post3\\spine2.ilp'
+
+indir = 'D:\RESEARCH_DATA\LISTON_LAB\DENDRITIC_SPINES_PROJECT\SPINE_ML_DATASET\PROCESSED_STACK_SEQUENCES' #my dataset
+infiles = os.listdir(indir)
+
+
+os.chdir(ilastik_location)
+for infile in infiles:
+    if infile[-4:] != '.tif':
+        print("skipping %s" % infile)
+        continue
+#Test with cutout_subregion#nickname and probabilities-- > bug for now H5 FORMAT INSTED OF TIFF ##
+    command = 'C:\\Program Files\\ilastik-1.3.3post3\\run-ilastik.bat --headless --project="C:\\Program Files\\ilastik-1.3.3post3\\spine2.ilp" --export_source="Probabilities"' % (
+        ilastik_project,
+        indir,
+        indir,
+        infile)
+    print("\n\n%s" % command)
+    subprocess.call(command, shell=True)

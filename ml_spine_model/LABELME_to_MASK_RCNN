@@ -1,0 +1,66 @@
+import os
+import json
+import numpy as np
+from PIL import Image, ImageDraw
+from ast import literal_eval
+import matplotlib.pyplot as plt
+import png 
+import shutil
+
+images_path=("D:\RESEARCH_DATA\LISTON_LAB\DENDRITIC_SPINES_PROJECT\SPINE_ML_DATASET\PROCESSED_STACK_SEQUENCES_PNG")
+results_path=("D:\RESEARCH_DATA\LISTON_LAB\DENDRITIC_SPINES_PROJECT\SPINE_ML_DATASET\LABELME_RESULTS")
+MaskPath=("D:\RESEARCH_DATA\LISTON_LAB\DENDRITIC_SPINES_PROJECT\SPINE_ML_DATASET\LABELED_DATA_SET")
+
+if os.path.exists(MaskPath) and os.path.isdir(MaskPath):
+    shutil.rmtree(MaskPath)    
+
+if not os.path.exists(MaskPath):
+    os.makedirs(MaskPath)
+
+os.chdir(results_path)
+result_files = os.listdir(results_path)
+
+# Get ROI-> create mask -> put mask in new folder
+# Open Data and Create Mask
+for filenames in result_files:
+     file_new_directory=MaskPath + '\\' + filenames[:-5] + "\\masks"
+     data = json.load(open(filenames))
+     shapes=data['shapes']
+     Height=data['imageHeight']
+     Width=data['imageWidth']
+     for u in range(len(shapes)):
+        shape_oh=shapes[u]     
+        points=str(tuple(shape_oh['points']))
+        points=points.replace('[','(').replace(']',')')
+        points=literal_eval(points)
+        img=Image.new('L',(Width,Height),0)
+        ImageDraw.Draw(img).polygon(points,outline=1,fill=1)
+        mask=np.array(img)
+        if not os.path.exists(file_new_directory):
+             os.makedirs(file_new_directory)
+        os.chdir(file_new_directory)
+        maskname=filenames[:-5] + "_mask_" +str(u) + ".png"
+        png.from_array(mask, 'L').save(maskname)
+        os.chdir(results_path)
+        
+# Loop through mask folders and make sure image is in the folder too 
+os.chdir(MaskPath)
+count = 0
+for subdir,dirs,files in os.walk(MaskPath):
+    for folder in dirs:
+        count=count + 1
+        ImagePath=str(subdir) + "\\" + str(folder) + "\\" + str('Image')
+        if not os.path.exists(ImagePath):
+             os.makedirs(ImagePath)
+        filesearch=folder + '.png'
+        os.chdir(images_path)
+        Image_oh=plt.imread(filesearch)
+        os.chdir(ImagePath)
+        plt.imsave(filesearch,Image_oh)
+        os.chdir(MaskPath)
+        if count == len(dirs):
+            break
+    if count == len(dirs):
+        break
+    
+    

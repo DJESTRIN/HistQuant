@@ -1,0 +1,87 @@
+"""2P-Dendritic Spine Imaging Analysis Pipeline Written by David Estrin """
+#Libraries Packages and dependencies
+import os 
+from skimage import io
+import matplotlib.pyplot as plt
+import numpy as np
+from cv2 import filter2D
+import cv2 as cv
+from cv2 import adaptiveThreshold
+from skimage.filters import threshold_otsu, threshold_adaptive
+import warnings
+warnings.filterwarnings("ignore")
+from tifffile import imsave
+
+path=("D:\RESEARCH_DATA\LISTON_LAB\DENDRITIC_SPINES_PROJECT\SPINE_ML_DATASET\TIFF_STACK")
+path2=("D:\RESEARCH_DATA\LISTON_LAB\DENDRITIC_SPINES_PROJECT\SPINE_ML_DATASET\PROCESSED_STACK_SEQUENCES")
+os.chdir(path)
+
+def ThresholdImage(image_to_transform, threshold):
+    Sizeofimage=image_to_transform.shape
+    for x in range(Sizeofimage[0]):
+        for y in range(Sizeofimage[1]):
+            if image_to_transform[x,y]< threshold: 
+                image_to_transform[x,y]=0
+    output_image=image_to_transform
+    return output_image
+
+def PreprocessImageStack(image_stack):
+    #Gaussian Smooth image (low pass filter and high pass filter)
+    Gaussianblur=np.array([[1,4,6,4,1],[4,16,24,16,4],[6,24,36,24,6], [4,16,24,16,4],
+                        [1,4,6,4,1]]) * (1/256)
+    HighPassKernel=np.array([[-1,-1,-1],[-1,9,-1],[-1,-1,-1]])
+    
+    #Loop through images and apply Gaussian blur => High Pass filter 
+    for zslice in range(len(image_stack)):
+         image_stack[zslice]= filter2D(image_stack[zslice], -1, Gaussianblur)
+         image_stack[zslice]= filter2D(image_stack[zslice], -1, HighPassKernel)
+         
+    #Global Threshold 
+    image_reshape=np.array(image_stack)
+    X=image_stack.shape[0]
+    Y=image_stack.shape[1]
+    Z=image_stack.shape[2]
+    length=X*Y
+    image_reshape=image_reshape.reshape(length,Z) #Reshape into 2D matrix
+    image_reshape=(image_reshape/image_reshape.max())*255 #Convert from Unt16 to Grayscale
+    threshold=np.percentile(image_reshape,10) #Calculate 10th percentile threshold
+    output_image = ThresholdImage(image_reshape, threshold) 
+    Thresh_image=output_image.reshape(X,Y,Z)
+    return Thresh_image
+
+
+for filename in os.listdir(path):
+    if filename.endswith(".tiff") or filename.endswith(".tif"): 
+         image=io.imread(filename)
+         image_stack=image
+         Thresh_image=PreprocessImageStack(image_stack)
+         os.chdir(path2)
+         for u in range(len(Thresh_image)):
+             filename_new = filename[:-4] + str(u)+".tif"
+             imsave(filename_new, Thresh_image[u])
+         os.chdir(path)
+
+filename_list=str()
+for filename in os.listdir(path):
+    if filename.endswith(".tiff") or filename.endswith(".tif"): 
+        filename_new= ' " '  + path + '\\' + filename[:-4] + '*.tif"  '
+        filename_list=filename_list+filename_new
+
+""" Build cmd strings based on input files """
+
+#cmdstring= 'cmd /k " $ ./run_ilastik.sh --headless \ --project=MyProject.ilp \ --export_source="Probabilities" \  '
+#cmdstring=cmdstring+filename_list+' " '
+
+#os.system(cmdstring)
+
+
+
+# plt.figure(figsize=(20,20))
+ #plt.imshow(image[24],cmap='gray')
+ #plt.figure(figsize=(20,20))
+ #plt.imshow(image_stack[21],cmap='gray')
+ #plt.figure(figsize=(20,20))
+ #plt.imshow(Thresh_image[24],cmap='gray')
+
+
+ 
